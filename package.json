@@ -4,6 +4,7 @@
   "description": "Webapp for UCL COVID tennis bookings",
   "main": "src/index.js",
   "scripts": {
+    "start": "nodemon src/index.js",
     "dev": "nodemon src/index.js"
   },
   "author": "Hiru Ranasinghe",
