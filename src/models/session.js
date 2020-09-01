@@ -11,10 +11,17 @@ const sessionSchema = new mongoose.Schema(
       type: Number,
       required: true
     },
-    slots_avail: {
+    slots_booked: {
       type: Number,
+      default: 0,
       required: true
     },
+    participants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
     session_author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

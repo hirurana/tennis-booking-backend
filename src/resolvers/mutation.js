@@ -19,17 +19,13 @@ module.exports = {
     return await models.Session.create({
       session_datetime: args.session_datetime,
       max_slots: args.max_slots,
-      slots_avail: args.max_slots,
       session_author: mongoose.Types.ObjectId(user.id),
       session_updated_by: mongoose.Types.ObjectId(user.id)
     });
   },
-  //for simplicity UI pass a set of all params updated and original.
-  // should change to only updating parts that user has changed
-  // this means we need to change schema from required to optional
   updateSession: async (
     parent,
-    { id, session_datetime, max_slots, slots_avail },
+    { id, session_datetime, max_slots },
     { models, user }
   ) => {
     // if there is no user in the context throw an authentication error
@@ -38,11 +34,18 @@ module.exports = {
     }
     //find the session
     const session = await models.Session.findById(id);
-    // if the session owner and current user don't match throw a ForbiddenError error
+    //if the session owner and current user don't match throw a ForbiddenError error
     if (session && String(session.session_author) != user.id) {
       // TODO: Change this to 'if user.id is not a R&D coordinator'
       throw new ForbiddenError(
         "You do not have permission to update this session"
+      );
+    }
+    // // if new max slots is less than already booked throw an error
+    console.log(session.slots_booked);
+    if (session.slots_booked > max_slots) {
+      throw new ForbiddenError(
+        "Cannot change maximum capacity lower than number of users already booked"
       );
     }
     return await models.Session.findOneAndUpdate(
@@ -70,6 +73,7 @@ module.exports = {
     }
     //find the session
     const session = await models.Session.findById(id);
+
     // if the session owner and current user don't match throw a ForbiddenError error
     if (session && String(session.session_author) != user.id) {
       // TODO: Change this to 'if user.id is not a R&D coordinator'
@@ -77,6 +81,7 @@ module.exports = {
         "You do not have permission to delete this session"
       );
     }
+
     try {
       await session.remove();
       return true;
@@ -84,35 +89,63 @@ module.exports = {
       return false;
     }
   },
-  createBooking: async (parent, args, { models, user }) => {
+  createBooking: async (parent, { id }, { models, user }) => {
     // if there is no user in the context throw an authentication error
     if (!user) {
       throw new AuthenticationError("You must be signed in to make a booking");
     }
-    return await models.Booking.create({
-      author: mongoose.Types.ObjectId(user.id),
-      session_id: args.session_id
-    });
+
+    // find session
+    const session = await models.Session.findById(id);
+    // if already booked return session
+    const hasBooked = session.participants.indexOf(user.id);
+    if (hasBooked != -1) {
+      return session;
+    } else {
+      return await models.Session.findByIdAndUpdate(
+        id,
+        {
+          $push: {
+            participants: mongoose.Types.ObjectId(user.id)
+          },
+          $inc: {
+            slots_booked: 1
+          }
+        },
+        {
+          new: true
+        }
+      );
+    }
   },
   deleteBooking: async (parent, { id }, { models, user }) => {
     // if there is no user in the context throw an authentication error
     if (!user) {
       throw new AuthenticationError("You must be signed in to make a booking");
     }
-    // find the booking
-    const booking = await models.Booking.findById(id);
-    // if the booking owner and current user don't match throw a ForbiddenError error
-    if (booking && String(booking.author) != user.id) {
-      // TODO: Change this to 'if user.id is not a R&D coordinator'
-      throw new ForbiddenError(
-        "You do not have permission to delete this booking"
+
+    // find session
+    const session = await models.Session.findById(id);
+    // if already booked then remove
+    const hasBooked = session.participants.indexOf(user.id);
+    if (hasBooked != -1) {
+      return await models.Session.findByIdAndUpdate(
+        id,
+        {
+          $pull: {
+            participants: mongoose.Types.ObjectId(user.id)
+          },
+          $inc: {
+            slots_booked: -1
+          }
+        },
+        {
+          new: true
+        }
       );
-    }
-    try {
-      await booking.remove();
-      return true;
-    } catch (err) {
-      return false;
+    } else {
+      // if not booked then return session
+      return session;
     }
   },
   signUp: async (parent, { username, email, password }, { models }) => {
