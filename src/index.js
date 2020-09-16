@@ -30,8 +30,8 @@ const DB_HOST = process.env.DB_HOST;
 
 const app = express();
 
-app.use(helmet());
-app.use(cors());
+//app.use(helmet());
+//app.use(cors());
 
 //connect to DB
 db.connect(DB_HOST);
@@ -40,7 +40,7 @@ db.connect(DB_HOST);
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  validationRules: [depthLimit(5), createComplexityLimitRule(1000)],
+  //validationRules: [depthLimit(5), createComplexityLimitRule(1000)],
   context: ({ req }) => {
     // get the user token from the headers
     const token = req.headers.authorization;
@@ -48,14 +48,16 @@ const server = new ApolloServer({
     const user = getUser(token);
     // Add the db models and the user to the context
     return { models, user };
-  }
+  },
+  debug: true,
+  tracing: true,
+  introspection: true,
+  playground: true
 });
 
 //Apply middleware and set path to /api
 server.applyMiddleware({ app, path: "/booktennis" });
 
 app.listen({ port }, () =>
-  console.log(
-    `GraphQL Server running at http://localhost:${port}${server.graphqlPath}`
-  )
+  console.log(`GraphQL Server running on ${port}${server.graphqlPath}`)
 );

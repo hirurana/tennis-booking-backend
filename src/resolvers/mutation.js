@@ -97,6 +97,12 @@ module.exports = {
 
     // find session
     const session = await models.Session.findById(id);
+
+    // if session full throw an error
+    if (session.slots_booked === session.max_slots) {
+      throw new ForbiddenError("This session is fully booked");
+    }
+
     // if already booked return session
     const hasBooked = session.participants.indexOf(user.id);
     if (hasBooked != -1) {
@@ -123,6 +129,8 @@ module.exports = {
     if (!user) {
       throw new AuthenticationError("You must be signed in to make a booking");
     }
+
+    //ForbiddenError for deleting bookings that arent yours??
 
     // find session
     const session = await models.Session.findById(id);
