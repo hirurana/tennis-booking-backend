@@ -22,8 +22,8 @@ module.exports = gql`
   type Query {
     sessions: [Session!]!
     session(id: ID!): Session!
-    user(username: String!): User
     users: [User!]!
+    user(username: String!): User
     me: User!
   }
   type Mutation {
