@@ -12,17 +12,21 @@ require("dotenv").config();
 module.exports = {
   createSession: async (parent, args, { models, user }) => {
     // if there is no user in the context throw an authentication error
-    if (!user) {
-      throw new AuthenticationError("You must be signed in to make a Session");
+    if (!(user && user.admin)) {
+      throw new ForbiddenError("You must be an admin to make a Session");
     }
 
     return await models.Session.create({
       session_datetime: args.session_datetime,
+      session_address: args.session_address,
+      session_duration: args.session_duration,
+      session_level: args.session_level,
       max_slots: args.max_slots,
       session_author: mongoose.Types.ObjectId(user.id),
       session_updated_by: mongoose.Types.ObjectId(user.id)
     });
   },
+
   updateSession: async (
     parent,
     { id, session_datetime, max_slots },
@@ -34,15 +38,13 @@ module.exports = {
     }
     //find the session
     const session = await models.Session.findById(id);
-    //if the session owner and current user don't match throw a ForbiddenError error
-    if (session && String(session.session_author) != user.id) {
-      // TODO: Change this to 'if user.id is not a R&D coordinator'
+    //if user is not an admin, throw ForbiddenError.
+    if (!user.admin) {
       throw new ForbiddenError(
         "You do not have permission to update this session"
       );
     }
     // // if new max slots is less than already booked throw an error
-    console.log(session.slots_booked);
     if (session.slots_booked > max_slots) {
       throw new ForbiddenError(
         "Cannot change maximum capacity lower than number of users already booked"
@@ -64,6 +66,7 @@ module.exports = {
       }
     );
   },
+
   deleteSession: async (parent, { id }, { models, user }) => {
     // if there is no user in the context throw an authentication error
     if (!user) {
@@ -74,9 +77,8 @@ module.exports = {
     //find the session
     const session = await models.Session.findById(id);
 
-    // if the session owner and current user don't match throw a ForbiddenError error
-    if (session && String(session.session_author) != user.id) {
-      // TODO: Change this to 'if user.id is not a R&D coordinator'
+    // if user is not an admin throw a ForbiddenError error
+    if (!user.admin) {
       throw new ForbiddenError(
         "You do not have permission to delete this session"
       );
@@ -89,6 +91,7 @@ module.exports = {
       return false;
     }
   },
+
   createBooking: async (parent, { id }, { models, user }) => {
     // if there is no user in the context throw an authentication error
     if (!user) {
@@ -124,6 +127,7 @@ module.exports = {
       );
     }
   },
+
   deleteBooking: async (parent, { id }, { models, user }) => {
     // if there is no user in the context throw an authentication error
     if (!user) {
@@ -156,7 +160,23 @@ module.exports = {
       return session;
     }
   },
-  signUp: async (parent, { username, email, password }, { models }) => {
+
+  signUp: async (
+    parent,
+    { link_id, username, email, password },
+    { models }
+  ) => {
+    //check signUp link id
+    const linkRecord = await models.UniqueLink.findById(link_id);
+    if (!linkRecord) {
+      throw new ForbiddenError("This link is broken");
+    }
+    console.log(linkRecord);
+    console.log(email);
+    if (!(email === linkRecord.email)) {
+      throw new ForbiddenError("Incorrect email provided");
+    }
+
     // normalise email address by trimming whitespaces and convert all to lower case
     email = email.trim().toLowerCase();
     // hash the password
@@ -168,7 +188,7 @@ module.exports = {
         email,
         password: hashed
       });
-
+      await models.UniqueLink.findOneAndRemove({ _id: link_id });
       // create and return JWT
       return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
     } catch (err) {
@@ -176,6 +196,7 @@ module.exports = {
       throw new Error("Error creating account");
     }
   },
+
   signIn: async (parent, { username, email, password }, { models }) => {
     if (email) {
       //normalise email
@@ -199,5 +220,22 @@ module.exports = {
 
     //create and return the json web token
     return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+  },
+
+  createLink: async (parent, args, { models, user }) => {
+    if (!user) {
+      throw new AuthenticationError("You must be signed in to generate links");
+    }
+
+    User = await models.User.findById(user.id);
+
+    if (!User.admin) {
+      throw new ForbiddenError("You must be an admin to generate links");
+    }
+
+    return await models.UniqueLink.create({
+      email: args.email,
+      created_by: mongoose.Types.ObjectId(user.id)
+    });
   }
 };

@@ -23,7 +23,7 @@ module.exports = gql`
     admin: Boolean!
     user_sessions: [Session!]!
   }
-  type UniqueLinks {
+  type UniqueLink {
     id: ID!
     email: String!
     createdBy: User!
@@ -35,6 +35,7 @@ module.exports = gql`
     users: [User!]!
     user(username: String!): User
     me: User!
+    verifyLink(id: ID!): Boolean!
   }
   type Mutation {
     createSession(session_datetime: String!, max_slots: Int!): Session!
@@ -42,7 +43,13 @@ module.exports = gql`
     deleteSession(id: ID!): Boolean!
     createBooking(id: ID!): Session!
     deleteBooking(id: ID!): Session!
-    signUp(username: String!, email: String!, password: String!): String!
+    signUp(
+      link_id: String!
+      username: String!
+      email: String!
+      password: String!
+    ): String!
     signIn(username: String, email: String, password: String!): String!
+    createLink(email: String!): UniqueLink!
   }
 `;

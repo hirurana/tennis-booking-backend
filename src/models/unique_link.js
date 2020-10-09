@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 // Define session schema in the DB
-const uniqueLinksSchema = new mongoose.Schema(
+const uniqueLinkSchema = new mongoose.Schema(
   {
     email: {
       type: String,
@@ -21,6 +21,6 @@ const uniqueLinksSchema = new mongoose.Schema(
 );
 
 // Define the session model with the schema
-const UniqueLinks = mongoose.model("UniqueLinks", uniqueLinksSchema);
+const UniqueLink = mongoose.model("UniqueLink", uniqueLinkSchema);
 
-module.exports = UniqueLinks;
+module.exports = UniqueLink;

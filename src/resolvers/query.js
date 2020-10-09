@@ -14,6 +14,11 @@ module.exports = {
   me: async (parent, args, { models, user }) => {
     // find a user given the current user context
     return await models.User.findById(user.id);
+  },
+  verifyLink: async (parent, { id }, { models }) => {
+    // check if record exists
+    link = await models.UniqueLink.findById(id);
+    return !!link;
   }
   // need to add queries for members and coordinators
 };
