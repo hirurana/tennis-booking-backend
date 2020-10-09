@@ -5,6 +5,9 @@ module.exports = gql`
   type Session {
     id: ID!
     session_datetime: String!
+    session_address: String!
+    session_duration: Int!
+    session_level: String!
     max_slots: Int!
     slots_booked: Int!
     participants: [User!]
@@ -17,7 +20,14 @@ module.exports = gql`
     id: ID!
     username: String!
     email: String!
+    admin: Boolean!
     user_sessions: [Session!]!
+  }
+  type UniqueLinks {
+    id: ID!
+    email: String!
+    createdBy: User!
+    createdAt: DateTime!
   }
   type Query {
     sessions: [Session!]!
