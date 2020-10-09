@@ -1,103 +1,104 @@
 // For encrypting passwords
 const bcrypt = require('bcrypt')
 // Dealing with tokens
-const jwt = require('jsonwebtoken')
-const { AuthenticationError, ForbiddenError } = require('apollo-server-express')
-const mongoose = require('mongoose')
-require('dotenv').config()
+const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require("uuid");
+
+const {
+  AuthenticationError,
+  ForbiddenError
+} = require("apollo-server-express");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 module.exports = {
-    createSession: async (parent, args, { models, user }) => {
-        // if there is no user in the context throw an authentication error
-        if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to make a Session',
-            )
-        }
+  createSession: async (parent, args, { models, user }) => {
+    // if there is no user in the context throw an authentication error
+    if (!(user && user.admin)) {
+      throw new ForbiddenError("You must be an admin to make a Session");
+    }
 
-        return await models.Session.create({
-            session_datetime: args.session_datetime,
-            max_slots: args.max_slots,
-            session_author: mongoose.Types.ObjectId(user.id),
-            session_updated_by: mongoose.Types.ObjectId(user.id),
-        })
-    },
-    updateSession: async (
-        parent,
-        { id, session_datetime, max_slots },
-        { models, user },
-    ) => {
-        // if there is no user in the context throw an authentication error
-        if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to make a Session',
-            )
-        }
-        //find the session
-        const session = await models.Session.findById(id)
-        //if the session owner and current user don't match throw a ForbiddenError error
-        if (session && String(session.session_author) != user.id) {
-            // TODO: Change this to 'if user.id is not a R&D coordinator'
-            throw new ForbiddenError(
-                'You do not have permission to update this session',
-            )
-        }
-        // // if new max slots is less than already booked throw an error
-        console.log(session.slots_booked)
-        if (session.slots_booked > max_slots) {
-            throw new ForbiddenError(
-                'Cannot change maximum capacity lower than number of users already booked',
-            )
-        }
-        return await models.Session.findOneAndUpdate(
-            {
-                _id: id,
-            },
-            {
-                $set: {
-                    session_datetime,
-                    max_slots,
-                    session_updated_by: mongoose.Types.ObjectId(user.id),
-                },
-            },
-            {
-                new: true,
-            },
-        )
-    },
-    deleteSession: async (parent, { id }, { models, user }) => {
-        // if there is no user in the context throw an authentication error
-        if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to delete a session',
-            )
-        }
-        //find the session
-        const session = await models.Session.findById(id)
+    return await models.Session.create({
+      session_datetime: args.session_datetime,
+      session_address: args.session_address,
+      session_duration: args.session_duration,
+      session_level: args.session_level,
+      max_slots: args.max_slots,
+      session_author: mongoose.Types.ObjectId(user.id),
+      session_updated_by: mongoose.Types.ObjectId(user.id)
+    });
+  },
 
-        // if the session owner and current user don't match throw a ForbiddenError error
-        if (session && String(session.session_author) != user.id) {
-            // TODO: Change this to 'if user.id is not a R&D coordinator'
-            throw new ForbiddenError(
-                'You do not have permission to delete this session',
-            )
+  updateSession: async (
+    parent,
+    { id, session_datetime, max_slots },
+    { models, user }
+  ) => {
+    // if there is no user in the context throw an authentication error
+    if (!user) {
+      throw new AuthenticationError("You must be signed in to make a Session");
+    }
+    //find the session
+    const session = await models.Session.findById(id);
+    //if user is not an admin, throw ForbiddenError.
+    if (!user.admin) {
+      throw new ForbiddenError(
+        "You do not have permission to update this session"
+      );
+    }
+    // // if new max slots is less than already booked throw an error
+    if (session.slots_booked > max_slots) {
+      throw new ForbiddenError(
+        "Cannot change maximum capacity lower than number of users already booked"
+      );
+    }
+    return await models.Session.findOneAndUpdate(
+      {
+        _id: id
+      },
+      {
+        $set: {
+          session_datetime,
+          max_slots,
+          session_updated_by: mongoose.Types.ObjectId(user.id)
         }
+      },
+      {
+        new: true
+      }
+    );
+  },
 
-        try {
-            await session.remove()
-            return true
-        } catch (err) {
-            return false
-        }
-    },
-    createBooking: async (parent, { id }, { models, user }) => {
-        // if there is no user in the context throw an authentication error
-        if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to make a booking',
-            )
-        }
+  deleteSession: async (parent, { id }, { models, user }) => {
+    // if there is no user in the context throw an authentication error
+    if (!user) {
+      throw new AuthenticationError(
+        "You must be signed in to delete a session"
+      );
+    }
+    //find the session
+    const session = await models.Session.findById(id);
 
+    // if user is not an admin throw a ForbiddenError error
+    if (!user.admin) {
+      throw new ForbiddenError(
+        "You do not have permission to delete this session"
+      );
+    }
+
+    try {
+      await session.remove();
+      return true;
+    } catch (err) {
+      return false;
+    }
+  },
+
+  createBooking: async (parent, { id }, { models, user }) => {
+    // if there is no user in the context throw an authentication error
+    if (!user) {
+      throw new AuthenticationError("You must be signed in to make a booking");
+    }
         // find session
         const session = await models.Session.findById(id)
 
@@ -105,87 +106,98 @@ module.exports = {
         if (session.slots_booked === session.max_slots) {
             throw new ForbiddenError('This session is fully booked')
         }
-
-        // if already booked return session
-        const hasBooked = session.participants.indexOf(user.id)
-        if (hasBooked != -1) {
-            return session
-        } else {
-            return await models.Session.findByIdAndUpdate(
-                id,
-                {
-                    $push: {
-                        participants: mongoose.Types.ObjectId(user.id),
-                    },
-                    $inc: {
-                        slots_booked: 1,
-                    },
-                },
-                {
-                    new: true,
-                },
-            )
+    // if already booked return session
+    const hasBooked = session.participants.indexOf(user.id);
+    if (hasBooked != -1) {
+      return session;
+    } else {
+      return await models.Session.findByIdAndUpdate(
+        id,
+        {
+          $push: {
+            participants: mongoose.Types.ObjectId(user.id)
+          },
+          $inc: {
+            slots_booked: 1
+          }
+        },
+        {
+          new: true
         }
-    },
-    deleteBooking: async (parent, { id }, { models, user }) => {
-        // if there is no user in the context throw an authentication error
-        if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to make a booking',
-            )
-        }
+      );
+    }
+  },
 
+  deleteBooking: async (parent, { id }, { models, user }) => {
+    // if there is no user in the context throw an authentication error
+    if (!user) {
+      throw new AuthenticationError("You must be signed in to make a booking");
+    }
         //ForbiddenError for deleting bookings that arent yours??
+    // find session
+    const session = await models.Session.findById(id);
+    // if already booked then remove
+    const hasBooked = session.participants.indexOf(user.id);
+    if (hasBooked != -1) {
+      return await models.Session.findByIdAndUpdate(
+        id,
+        {
+          $pull: {
+            participants: mongoose.Types.ObjectId(user.id)
+          },
+          $inc: {
+            slots_booked: -1
+          }
+        },
+        {
+          new: true
+        }
+      );
+    } else {
+      // if not booked then return session
+      return session;
+    }
+  },
 
-        // find session
-        const session = await models.Session.findById(id)
-        // if already booked then remove
-        const hasBooked = session.participants.indexOf(user.id)
-        if (hasBooked != -1) {
-            return await models.Session.findByIdAndUpdate(
-                id,
-                {
-                    $pull: {
-                        participants: mongoose.Types.ObjectId(user.id),
-                    },
-                    $inc: {
-                        slots_booked: -1,
-                    },
-                },
-                {
-                    new: true,
-                },
-            )
-        } else {
-            // if not booked then return session
-            return session
-        }
-    },
-    signUp: async (parent, { username, email, password }, { models }) => {
-        // normalise email address by trimming whitespaces and convert all to lower case
-        email = email.trim().toLowerCase()
-        // hash the password
-        const hashed = await bcrypt.hash(password, 10)
-        // Store user in the DB
-        try {
-            const user = await models.User.create({
-                username,
-                email,
-                password: hashed,
-            })
+  signUp: async (
+    parent,
+    { link_uuid, username, email, password },
+    { models }
+  ) => {
+    //check signUp link id
+    const linkRecord = await models.UniqueLink.findOne({ uuid: link_uuid });
+    if (!linkRecord) {
+      throw new ForbiddenError("This link is broken");
+    }
+    if (!(email === linkRecord.email)) {
+      throw new ForbiddenError("Incorrect email provided");
+    }
 
-            // create and return JWT
-            return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
-        } catch (err) {
-            console.log(err)
-            throw new Error('Error creating account')
-        }
-    },
-    signIn: async (parent, { username, email, password }, { models }) => {
-        if (email) {
-            //normalise email
-            email = email.trim().toLowerCase()
-        }
+    // normalise email address by trimming whitespaces and convert all to lower case
+    email = email.trim().toLowerCase();
+    // hash the password
+    const hashed = await bcrypt.hash(password, 10);
+    // Store user in the DB
+    try {
+      const user = await models.User.create({
+        username,
+        email,
+        password: hashed
+      });
+      await models.UniqueLink.findOneAndRemove({ uuid: link_uuid });
+      // create and return JWT
+      return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    } catch (err) {
+      console.log(err);
+      throw new Error("Error creating account");
+    }
+  },
+
+  signIn: async (parent, { username, email, password }, { models }) => {
+    if (email) {
+      //normalise email
+      email = email.trim().toLowerCase();
+    }
 
         const user = await models.User.findOne({
             $or: [{ email }, { username }],
@@ -201,8 +213,25 @@ module.exports = {
         if (!valid) {
             throw new AuthenticationError('Error signing in')
         }
+    //create and return the json web token
+    return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+  },
 
-        //create and return the json web token
-        return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
-    },
-}
+  createLink: async (parent, args, { models, user }) => {
+    if (!user) {
+      throw new AuthenticationError("You must be signed in to generate links");
+    }
+
+    User = await models.User.findById(user.id);
+
+    if (!User.admin) {
+      throw new ForbiddenError("You must be an admin to generate links");
+    }
+
+    return await models.UniqueLink.create({
+      uuid: uuidv4(),
+      email: args.email,
+      created_by: mongoose.Types.ObjectId(user.id)
+    });
+  }
+};
