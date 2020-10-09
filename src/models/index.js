@@ -8,4 +8,4 @@ const models = {
   UniqueLink
 };
 
-module.exports = models;
+module.exports = models

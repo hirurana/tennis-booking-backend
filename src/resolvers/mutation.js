@@ -1,5 +1,5 @@
 // For encrypting passwords
-const bcrypt = require("bcrypt");
+const bcrypt = require('bcrypt')
 // Dealing with tokens
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
@@ -99,15 +99,13 @@ module.exports = {
     if (!user) {
       throw new AuthenticationError("You must be signed in to make a booking");
     }
+        // find session
+        const session = await models.Session.findById(id)
 
-    // find session
-    const session = await models.Session.findById(id);
-
-    // if session full throw an error
-    if (session.slots_booked === session.max_slots) {
-      throw new ForbiddenError("This session is fully booked");
-    }
-
+        // if session full throw an error
+        if (session.slots_booked === session.max_slots) {
+            throw new ForbiddenError('This session is fully booked')
+        }
     // if already booked return session
     const hasBooked = session.participants.indexOf(user.id);
     if (hasBooked != -1) {
@@ -135,9 +133,7 @@ module.exports = {
     if (!user) {
       throw new AuthenticationError("You must be signed in to make a booking");
     }
-
-    //ForbiddenError for deleting bookings that arent yours??
-
+        //ForbiddenError for deleting bookings that arent yours??
     // find session
     const session = await models.Session.findById(id);
     // if already booked then remove
@@ -203,21 +199,20 @@ module.exports = {
       email = email.trim().toLowerCase();
     }
 
-    const user = await models.User.findOne({
-      $or: [{ email }, { username }]
-    });
+        const user = await models.User.findOne({
+            $or: [{ email }, { username }],
+        })
 
-    //if no user found
-    if (!user) {
-      throw new AuthenticationError("Error signing in");
-    }
+        //if no user found
+        if (!user) {
+            throw new AuthenticationError('Error signing in')
+        }
 
-    // if passwords don't match
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      throw new AuthenticationError("Error signing in");
-    }
-
+        // if passwords don't match
+        const valid = await bcrypt.compare(password, user.password)
+        if (!valid) {
+            throw new AuthenticationError('Error signing in')
+        }
     //create and return the json web token
     return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
   },
