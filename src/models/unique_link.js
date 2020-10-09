@@ -3,6 +3,11 @@ const mongoose = require("mongoose");
 // Define session schema in the DB
 const uniqueLinkSchema = new mongoose.Schema(
   {
+    uuid: {
+      type: String,
+      required: true,
+      index: { unique: true }
+    },
     email: {
       type: String,
       required: true,

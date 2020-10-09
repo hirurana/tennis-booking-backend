@@ -2,6 +2,8 @@
 const bcrypt = require("bcrypt");
 // Dealing with tokens
 const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require("uuid");
+
 const {
   AuthenticationError,
   ForbiddenError
@@ -163,16 +165,14 @@ module.exports = {
 
   signUp: async (
     parent,
-    { link_id, username, email, password },
+    { link_uuid, username, email, password },
     { models }
   ) => {
     //check signUp link id
-    const linkRecord = await models.UniqueLink.findById(link_id);
+    const linkRecord = await models.UniqueLink.findOne({ uuid: link_uuid });
     if (!linkRecord) {
       throw new ForbiddenError("This link is broken");
     }
-    console.log(linkRecord);
-    console.log(email);
     if (!(email === linkRecord.email)) {
       throw new ForbiddenError("Incorrect email provided");
     }
@@ -188,7 +188,7 @@ module.exports = {
         email,
         password: hashed
       });
-      await models.UniqueLink.findOneAndRemove({ _id: link_id });
+      await models.UniqueLink.findOneAndRemove({ uuid: link_uuid });
       // create and return JWT
       return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
     } catch (err) {
@@ -234,6 +234,7 @@ module.exports = {
     }
 
     return await models.UniqueLink.create({
+      uuid: uuidv4(),
       email: args.email,
       created_by: mongoose.Types.ObjectId(user.id)
     });
