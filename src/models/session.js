@@ -1,45 +1,45 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose')
 
 // Define session schema in the DB
 const sessionSchema = new mongoose.Schema(
-  {
-    session_datetime: {
-      type: String,
-      required: true
+    {
+        session_datetime: {
+            type: String,
+            required: true,
+        },
+        max_slots: {
+            type: Number,
+            required: true,
+        },
+        slots_booked: {
+            type: Number,
+            default: 0,
+            required: true,
+        },
+        participants: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+            },
+        ],
+        session_author: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true,
+        },
+        session_updated_by: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true,
+        },
     },
-    max_slots: {
-      type: Number,
-      required: true
+    {
+        // Assigns createdAt and updatedAt fields with a Date type
+        timestamps: true,
     },
-    slots_booked: {
-      type: Number,
-      default: 0,
-      required: true
-    },
-    participants: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-      }
-    ],
-    session_author: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
-    },
-    session_updated_by: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
-    }
-  },
-  {
-    // Assigns createdAt and updatedAt fields with a Date type
-    timestamps: true
-  }
-);
+)
 
 // Define the session model with the schema
-const Session = mongoose.model("Session", sessionSchema);
+const Session = mongoose.model('Session', sessionSchema)
 
-module.exports = Session;
+module.exports = Session

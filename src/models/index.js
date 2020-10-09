@@ -1,9 +1,9 @@
-const Session = require("./session");
-const User = require("./user");
+const Session = require('./session')
+const User = require('./user')
 
 const models = {
-  Session,
-  User
-};
+    Session,
+    User,
+}
 
-module.exports = models;
+module.exports = models
