@@ -8,6 +8,7 @@ module.exports = gql`
         address: String!
         duration: Int!
         level: String!
+        courtIndex: Int!
         maxSlots: Int!
         slotsBooked: Int!
         participants: [User!]
