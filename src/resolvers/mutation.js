@@ -9,18 +9,23 @@ const mongoose = require('mongoose')
 require('dotenv').config()
 
 module.exports = {
-    createSession: async (parent, args, { models, user }) => {
+    createSession: async (
+        parent,
+        { startTime, address, duration, level, courtIndex, maxSlots },
+        { models, user },
+    ) => {
         // if there is no user in the context throw an authentication error
         if (!(user && user.admin)) {
             throw new ForbiddenError('You must be an admin to make a Session')
         }
 
         return await models.Session.create({
-            startTime: args.startTime,
-            address: args.address,
-            duration: args.duration,
-            level: args.level,
-            maxSlots: args.maxSlots,
+            startTime,
+            address,
+            duration,
+            level,
+            courtIndex,
+            maxSlots,
             author: mongoose.Types.ObjectId(user.id),
             lastUpdatedBy: mongoose.Types.ObjectId(user.id),
         })
@@ -28,7 +33,7 @@ module.exports = {
 
     updateSession: async (
         parent,
-        { id, startTime, maxSlots },
+        { id, startTime, address, duration, level, courtIndex, maxSlots },
         { models, user },
     ) => {
         // if there is no user in the context throw an authentication error
@@ -58,6 +63,10 @@ module.exports = {
             {
                 $set: {
                     startTime,
+                    address,
+                    duration,
+                    level,
+                    courtIndex,
                     maxSlots,
                     lastUpdatedBy: mongoose.Types.ObjectId(user.id),
                 },
@@ -84,6 +93,8 @@ module.exports = {
                 'You do not have permission to delete this session',
             )
         }
+
+        // TODO do we need to update each booked user's sessions?
 
         try {
             await session.remove()
