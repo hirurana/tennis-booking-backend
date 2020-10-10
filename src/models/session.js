@@ -7,6 +7,22 @@ const sessionSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        address: {
+            type: String,
+            required: true,
+        },
+        duration: {
+            type: Number,
+            required: true,
+        },
+        level: {
+            type: String,
+            required: true,
+        },
+        courtIndex: {
+            type: Number,
+            required: true,
+        },
         maxSlots: {
             type: Number,
             required: true,

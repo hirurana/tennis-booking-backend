@@ -236,7 +236,7 @@ module.exports = {
         return await models.UniqueLink.create({
             uuid: uuidv4(),
             email: args.email,
-            created_by: mongoose.Types.ObjectId(user.id),
+            createdBy: mongoose.Types.ObjectId(user.id),
         })
     },
 }

@@ -26,6 +26,7 @@ module.exports = gql`
     }
     type UniqueLink {
         id: ID!
+        uuid: String!
         email: String!
         createdBy: User!
         createdAt: DateTime!
