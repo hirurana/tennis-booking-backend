@@ -12,8 +12,9 @@ module.exports = {
     createSession: async (
         parent,
         { startTime, address, duration, level, courtIndex, maxSlots },
-        { models, user },
+        { models, user: { id: userId } },
     ) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!(user && user.admin)) {
             throw new ForbiddenError('You must be an admin to make a Session')
@@ -34,22 +35,27 @@ module.exports = {
     updateSession: async (
         parent,
         { id, startTime, address, duration, level, courtIndex, maxSlots },
-        { models, user },
+        { models, user: { id: userId } },
     ) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!user) {
             throw new AuthenticationError(
                 'You must be signed in to make a Session',
             )
         }
-        //find the session
-        const session = await models.Session.findById(id)
         //if user is not an admin, throw ForbiddenError.
         if (!user.admin) {
             throw new ForbiddenError(
                 'You do not have permission to update this session',
             )
         }
+        //find the session
+        const session = await models.Session.findById(id)
+        if (!session) {
+            throw new ForbiddenError(`Session with id ${id} does not exist`)
+        }
+
         // // if new max slots is less than already booked throw an error
         if (session.slotsBooked > maxSlots) {
             throw new ForbiddenError(
@@ -77,21 +83,25 @@ module.exports = {
         )
     },
 
-    deleteSession: async (parent, { id }, { models, user }) => {
+    deleteSession: async (parent, { id }, { models, user: { id: userId } }) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!user) {
             throw new AuthenticationError(
                 'You must be signed in to delete a session',
             )
         }
-        //find the session
-        const session = await models.Session.findById(id)
 
         // if user is not an admin throw a ForbiddenError error
         if (!user.admin) {
             throw new ForbiddenError(
                 'You do not have permission to delete this session',
             )
+        }
+        //find the session
+        const session = await models.Session.findById(id)
+        if (!session) {
+            throw new ForbiddenError(`Session with id ${id} does not exist`)
         }
 
         // TODO do we need to update each booked user's sessions?
@@ -104,7 +114,8 @@ module.exports = {
         }
     },
 
-    createBooking: async (parent, { id }, { models, user }) => {
+    createBooking: async (parent, { id }, { models, user: { id: userId } }) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!user) {
             throw new AuthenticationError(
@@ -140,7 +151,8 @@ module.exports = {
         }
     },
 
-    deleteBooking: async (parent, { id }, { models, user }) => {
+    deleteBooking: async (parent, { id }, { models, user: { id: userId } }) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!user) {
             throw new AuthenticationError(
@@ -231,7 +243,8 @@ module.exports = {
         return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
     },
 
-    createLink: async (parent, args, { models, user }) => {
+    createLink: async (parent, args, { models, user: { id: userId } }) => {
+        const user = await models.User.findById(userId)
         if (!user) {
             throw new AuthenticationError(
                 'You must be signed in to generate links',
