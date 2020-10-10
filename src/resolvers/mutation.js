@@ -55,12 +55,13 @@ module.exports = {
         if (!session) {
             throw new ForbiddenError(`Session with id ${id} does not exist`)
         }
-
-        // // if new max slots is less than already booked throw an error
-        if (session.slotsBooked > maxSlots) {
-            throw new ForbiddenError(
-                'Cannot change maximum capacity lower than number of users already booked',
-            )
+        if (args.maxSlots) {
+            // // if new max slots is less than already booked throw an error
+            if (session.slotsBooked > args.maxSlots) {
+                throw new ForbiddenError(
+                    'Cannot change maximum capacity lower than number of users already booked',
+                )
+            }
         }
         return await models.Session.findOneAndUpdate(
             {
