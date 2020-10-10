@@ -3,15 +3,15 @@ const mongoose = require('mongoose')
 // Define session schema in the DB
 const sessionSchema = new mongoose.Schema(
     {
-        session_datetime: {
+        startTime: {
             type: String,
             required: true,
         },
-        max_slots: {
+        maxSlots: {
             type: Number,
             required: true,
         },
-        slots_booked: {
+        slotsBooked: {
             type: Number,
             default: 0,
             required: true,
@@ -22,12 +22,12 @@ const sessionSchema = new mongoose.Schema(
                 ref: 'User',
             },
         ],
-        session_author: {
+        author: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             required: true,
         },
-        session_updated_by: {
+        lastUpdatedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             required: true,
