@@ -40,8 +40,23 @@ module.exports = gql`
         verifyLink(uuid: String!): Boolean!
     }
     type Mutation {
-        createSession(startTime: String!, maxSlots: Int!): Session!
-        updateSession(id: ID!, startTime: String!, maxSlots: Int!): Session!
+        createSession(
+            startTime: String!
+            address: String!
+            duration: Int!
+            level: String!
+            courtIndex: Int!
+            maxSlots: Int!
+        ): Session!
+        updateSession(
+            id: ID!
+            startTime: String
+            address: String
+            duration: Int
+            level: String
+            courtIndex: Int
+            maxSlots: Int
+        ): Session!
         deleteSession(id: ID!): Boolean!
         createBooking(id: ID!): Session!
         deleteBooking(id: ID!): Session!

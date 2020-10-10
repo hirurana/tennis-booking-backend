@@ -34,7 +34,7 @@ module.exports = {
 
     updateSession: async (
         parent,
-        { id, startTime, address, duration, level, courtIndex, maxSlots },
+        { id, ...args },
         { models, user: { id: userId } },
     ) => {
         const user = await models.User.findById(userId)
@@ -68,12 +68,7 @@ module.exports = {
             },
             {
                 $set: {
-                    startTime,
-                    address,
-                    duration,
-                    level,
-                    courtIndex,
-                    maxSlots,
+                    ...args,
                     lastUpdatedBy: mongoose.Types.ObjectId(user.id),
                 },
             },
