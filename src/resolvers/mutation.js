@@ -9,47 +9,59 @@ const mongoose = require('mongoose')
 require('dotenv').config()
 
 module.exports = {
-    createSession: async (parent, args, { models, user }) => {
+    createSession: async (
+        parent,
+        { startTime, address, duration, level, courtIndex, maxSlots },
+        { models, user: { id: userId } },
+    ) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!(user && user.admin)) {
             throw new ForbiddenError('You must be an admin to make a Session')
         }
 
         return await models.Session.create({
-            session_datetime: args.session_datetime,
-            session_address: args.session_address,
-            session_duration: args.session_duration,
-            session_level: args.session_level,
-            max_slots: args.max_slots,
-            session_author: mongoose.Types.ObjectId(user.id),
-            session_updated_by: mongoose.Types.ObjectId(user.id),
+            startTime,
+            address,
+            duration,
+            level,
+            courtIndex,
+            maxSlots,
+            author: mongoose.Types.ObjectId(user.id),
+            lastUpdatedBy: mongoose.Types.ObjectId(user.id),
         })
     },
 
     updateSession: async (
         parent,
-        { id, session_datetime, max_slots },
-        { models, user },
+        { id, ...args },
+        { models, user: { id: userId } },
     ) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!user) {
             throw new AuthenticationError(
                 'You must be signed in to make a Session',
             )
         }
-        //find the session
-        const session = await models.Session.findById(id)
         //if user is not an admin, throw ForbiddenError.
         if (!user.admin) {
             throw new ForbiddenError(
                 'You do not have permission to update this session',
             )
         }
-        // // if new max slots is less than already booked throw an error
-        if (session.slots_booked > max_slots) {
-            throw new ForbiddenError(
-                'Cannot change maximum capacity lower than number of users already booked',
-            )
+        //find the session
+        const session = await models.Session.findById(id)
+        if (!session) {
+            throw new ForbiddenError(`Session with id ${id} does not exist`)
+        }
+        if (args.maxSlots) {
+            // // if new max slots is less than already booked throw an error
+            if (session.slotsBooked > args.maxSlots) {
+                throw new ForbiddenError(
+                    'Cannot change maximum capacity lower than number of users already booked',
+                )
+            }
         }
         return await models.Session.findOneAndUpdate(
             {
@@ -57,9 +69,8 @@ module.exports = {
             },
             {
                 $set: {
-                    session_datetime,
-                    max_slots,
-                    session_updated_by: mongoose.Types.ObjectId(user.id),
+                    ...args,
+                    lastUpdatedBy: mongoose.Types.ObjectId(user.id),
                 },
             },
             {
@@ -68,15 +79,14 @@ module.exports = {
         )
     },
 
-    deleteSession: async (parent, { id }, { models, user }) => {
+    deleteSession: async (parent, { id }, { models, user: { id: userId } }) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!user) {
             throw new AuthenticationError(
                 'You must be signed in to delete a session',
             )
         }
-        //find the session
-        const session = await models.Session.findById(id)
 
         // if user is not an admin throw a ForbiddenError error
         if (!user.admin) {
@@ -84,6 +94,13 @@ module.exports = {
                 'You do not have permission to delete this session',
             )
         }
+        //find the session
+        const session = await models.Session.findById(id)
+        if (!session) {
+            throw new ForbiddenError(`Session with id ${id} does not exist`)
+        }
+
+        // TODO do we need to update each booked user's sessions?
 
         try {
             await session.remove()
@@ -93,7 +110,8 @@ module.exports = {
         }
     },
 
-    createBooking: async (parent, { id }, { models, user }) => {
+    createBooking: async (parent, { id }, { models, user: { id: userId } }) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!user) {
             throw new AuthenticationError(
@@ -104,7 +122,7 @@ module.exports = {
         const session = await models.Session.findById(id)
 
         // if session full throw an error
-        if (session.slots_booked === session.max_slots) {
+        if (session.slotsBooked === session.maxSlots) {
             throw new ForbiddenError('This session is fully booked')
         }
         // if already booked return session
@@ -119,7 +137,7 @@ module.exports = {
                         participants: mongoose.Types.ObjectId(user.id),
                     },
                     $inc: {
-                        slots_booked: 1,
+                        slotsBooked: 1,
                     },
                 },
                 {
@@ -129,7 +147,8 @@ module.exports = {
         }
     },
 
-    deleteBooking: async (parent, { id }, { models, user }) => {
+    deleteBooking: async (parent, { id }, { models, user: { id: userId } }) => {
+        const user = await models.User.findById(userId)
         // if there is no user in the context throw an authentication error
         if (!user) {
             throw new AuthenticationError(
@@ -149,7 +168,7 @@ module.exports = {
                         participants: mongoose.Types.ObjectId(user.id),
                     },
                     $inc: {
-                        slots_booked: -1,
+                        slotsBooked: -1,
                     },
                 },
                 {
@@ -220,7 +239,8 @@ module.exports = {
         return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
     },
 
-    createLink: async (parent, args, { models, user }) => {
+    createLink: async (parent, args, { models, user: { id: userId } }) => {
+        const user = await models.User.findById(userId)
         if (!user) {
             throw new AuthenticationError(
                 'You must be signed in to generate links',
@@ -236,7 +256,7 @@ module.exports = {
         return await models.UniqueLink.create({
             uuid: uuidv4(),
             email: args.email,
-            created_by: mongoose.Types.ObjectId(user.id),
+            createdBy: mongoose.Types.ObjectId(user.id),
         })
     },
 }

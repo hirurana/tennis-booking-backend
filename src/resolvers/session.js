@@ -1,9 +1,9 @@
 module.exports = {
-    session_author: async (session, args, { models }) => {
-        return await models.User.findById(session.session_author)
+    author: async (session, args, { models }) => {
+        return await models.User.findById(session.author)
     },
-    session_updated_by: async (session, args, { models }) => {
-        return await models.User.findById(session.session_updated_by)
+    lastUpdatedBy: async (session, args, { models }) => {
+        return await models.User.findById(session.lastUpdatedBy)
     },
     participants: async (session, args, { models }) => {
         return await models.User.find({ _id: { $in: session.participants } })
