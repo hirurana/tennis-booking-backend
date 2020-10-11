@@ -8,6 +8,8 @@ const { AuthenticationError, ForbiddenError } = require('apollo-server-express')
 const mongoose = require('mongoose')
 require('dotenv').config()
 
+const { sessions: getUserSessions } = require('../resolvers/user')
+
 module.exports = {
     createSession: async (
         parent,
@@ -118,8 +120,25 @@ module.exports = {
                 'You must be signed in to make a booking',
             )
         }
+        // TODO make 3 a configurable value
+        const userSessions = await getUserSessions(user, {}, { models })
+        console.log(userSessions)
+        if (userSessions.length === 3) {
+            throw new ForbiddenError('You have used all of your bookings')
+        }
+
         // find session
         const session = await models.Session.findById(id)
+
+        // TODO uncomment this some day
+        if (
+            new Date() >
+            new Date(session.startTime).setHours(
+                new Date(session.startTime).getHours() + session.duration,
+            )
+        ) {
+            throw new ForbiddenError('This session has ended!')
+        }
 
         // if session full throw an error
         if (session.slotsBooked === session.maxSlots) {
