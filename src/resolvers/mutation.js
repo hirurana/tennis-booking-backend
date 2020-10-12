@@ -225,7 +225,7 @@ module.exports = {
                 email,
                 password: hashed,
             })
-            await models.UniqueLink.findOneAndRemove({ uuid: link_uuid })
+            await models.UniqueLink.findOneAndDelete({ uuid: link_uuid })
             // create and return JWT
             return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
         } catch (err) {
@@ -258,24 +258,39 @@ module.exports = {
         return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
     },
 
-    createLink: async (parent, args, { models, user: { id: userId } }) => {
-        const user = await models.User.findById(userId)
+    createLink: async (parent, args, { models, user }) => {
+        // check if email supplied exists (forgot pass)
+        const userExists = await models.User.findOne({ email: args.email })
+
         if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to generate links',
-            )
+            //if user not logged in then probably a forgot pass request.
+            //if user does not exist then bad request
+            if (!userExists) {
+                throw new AuthenticationError('Email not found')
+            }
+        } else {
+            //user is signed in, check if admin
+            user_profile = await models.User.findById(user.id)
+            if (!user_profile.admin) {
+                throw new ForbiddenError(
+                    'You must be an admin to generate links',
+                )
+            }
         }
 
-        User = await models.User.findById(user.id)
-
-        if (!User.admin) {
-            throw new ForbiddenError('You must be an admin to generate links')
-        }
-
+        //if link exists remove it to create new one
+        const linkExists = await models.UniqueLink.findOneAndDelete({
+            email: args.email,
+        })
+        //if user is admin or if unsigned user requests to create link for an account that exists
+        //create a link for them
+        //TODO generate email
         return await models.UniqueLink.create({
             uuid: uuidv4(),
             email: args.email,
-            createdBy: mongoose.Types.ObjectId(user.id),
+            createdBy: user
+                ? mongoose.Types.ObjectId(user.id)
+                : mongoose.Types.ObjectId(userExists.id),
         })
     },
 }
