@@ -10,8 +10,8 @@ module.exports = {
             .filter(
                 (session) =>
                     new Date() <=
-                    new Date(session.startTime).setHours(
-                        new Date(session.startTime).getHours() +
+                    new Date(session.startTime).setMinutes(
+                        new Date(session.startTime).getMinutes() +
                             session.duration,
                     ),
             )

@@ -134,8 +134,8 @@ module.exports = {
         // TODO uncomment this some day
         if (
             new Date() >
-            new Date(session.startTime).setHours(
-                new Date(session.startTime).getHours() + session.duration,
+            new Date(session.startTime).setMinutes(
+                new Date(session.startTime).getMinutes() + session.duration,
             )
         ) {
             throw new ForbiddenError('This session has ended!')
@@ -293,16 +293,16 @@ module.exports = {
             to: args.email, // Change to your recipient
             from: 'zcabhra@ucl.ac.uk', // Change to your verified sender
             subject: 'UCL Tennis Society',
-            html: `<strong>Please visit the following link to create an account <a href=${'http://localhost:1234/reset/' +
-                link_ext}> ${'http://localhost:1234/reset/' +
-                link_ext}</strong>`,
+            html: `<strong>Please visit the following link to create an account <a href=${
+                'http://localhost:1234/reset/' + link_ext
+            }> ${'http://localhost:1234/reset/' + link_ext}</strong>`,
         }
         sgMail
             .send(msg)
             .then(() => {
                 console.log('Email sent')
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error(error)
             })
 
