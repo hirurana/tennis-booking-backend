@@ -3,12 +3,14 @@ const bcrypt = require('bcrypt')
 // Dealing with tokens
 const jwt = require('jsonwebtoken')
 const { v4: uuidv4 } = require('uuid')
-
+const sgMail = require('@sendgrid/mail')
 const { AuthenticationError, ForbiddenError } = require('apollo-server-express')
 const mongoose = require('mongoose')
 require('dotenv').config()
 
 const { sessions: getUserSessions } = require('../resolvers/user')
+//SendGrid emailer setup API_KEY
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
 module.exports = {
     createSession: async (
@@ -284,8 +286,28 @@ module.exports = {
         //if user is admin or if unsigned user requests to create link for an account that exists
         //create a link for them
         //TODO generate email
+
+        const link_ext = uuidv4()
+
+        const msg = {
+            to: args.email, // Change to your recipient
+            from: 'zcabhra@ucl.ac.uk', // Change to your verified sender
+            subject: 'UCL Tennis Society',
+            html: `<strong>Please visit the following link to create an account <a href=${'http://localhost:1234/reset/' +
+                link_ext}> ${'http://localhost:1234/reset/' +
+                link_ext}</strong>`,
+        }
+        sgMail
+            .send(msg)
+            .then(() => {
+                console.log('Email sent')
+            })
+            .catch(error => {
+                console.error(error)
+            })
+
         return await models.UniqueLink.create({
-            uuid: uuidv4(),
+            uuid: link_ext,
             email: args.email,
             createdBy: user
                 ? mongoose.Types.ObjectId(user.id)
