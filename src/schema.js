@@ -29,7 +29,6 @@ module.exports = gql`
         uuid: String!
         email: String!
         signUp: Boolean!
-        createdBy: User!
         createdAt: DateTime!
     }
     type Query {
@@ -68,8 +67,6 @@ module.exports = gql`
         ): Boolean!
         resetPassword(link_uuid: String!, password: String!): Boolean!
         signIn(username: String, email: String, password: String!): String!
-        createLink(email: String!): UniqueLink!
-        clearUsers(secretCode: String!): Boolean!
-        clearSessions(secretCode: String!): Boolean!
+        createLink(email: String!): Boolean!
     }
 `

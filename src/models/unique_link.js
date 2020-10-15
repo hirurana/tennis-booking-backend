@@ -13,11 +13,6 @@ const uniqueLinkSchema = new mongoose.Schema(
             required: true,
             index: { unique: true },
         },
-        createdBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true,
-        },
         signUp: {
             type: Boolean,
             required: true,
