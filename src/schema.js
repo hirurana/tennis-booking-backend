@@ -28,6 +28,7 @@ module.exports = gql`
         id: ID!
         uuid: String!
         email: String!
+        signUp: Boolean!
         createdBy: User!
         createdAt: DateTime!
     }
@@ -68,5 +69,7 @@ module.exports = gql`
         ): String!
         signIn(username: String, email: String, password: String!): String!
         createLink(email: String!): UniqueLink!
+        clearUsers(secretCode: String!): Boolean!
+        clearSessions(secretCode: String!): Boolean!
     }
 `

@@ -206,6 +206,8 @@ module.exports = {
         { link_uuid, username, email, password },
         { models },
     ) => {
+        console.log('signup')
+        console.log(link_uuid, username, email, password)
         //check signUp link id
         const linkRecord = await models.UniqueLink.findOne({ uuid: link_uuid })
         if (!linkRecord) {
@@ -288,14 +290,16 @@ module.exports = {
         //TODO generate email
 
         const link_ext = uuidv4()
+        const link = `http://localhost:1234/${
+            userExists ? 'reset' : 'signup'
+        }/${link_ext}`
+        const prompt = userExists ? 'Reset Your Password' : 'Create an Account'
 
         const msg = {
             to: args.email, // Change to your recipient
             from: 'zcabhra@ucl.ac.uk', // Change to your verified sender
-            subject: 'UCL Tennis Society',
-            html: `<strong>Please visit the following link to create an account <a href=${
-                'http://localhost:1234/reset/' + link_ext
-            }> ${'http://localhost:1234/reset/' + link_ext}</strong>`,
+            subject: `UCL Tennis Society - ${prompt}`,
+            html: `<strong>Please visit the following link to ${prompt.toLowerCase()} <a href="${link}">${link}</a></strong>`,
         }
         sgMail
             .send(msg)
@@ -312,6 +316,7 @@ module.exports = {
             createdBy: user
                 ? mongoose.Types.ObjectId(user.id)
                 : mongoose.Types.ObjectId(userExists.id),
+            signUp: !userExists,
         })
     },
 }
