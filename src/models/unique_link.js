@@ -18,6 +18,10 @@ const uniqueLinkSchema = new mongoose.Schema(
             ref: 'User',
             required: true,
         },
+        signUp: {
+            type: Boolean,
+            required: true,
+        },
     },
     {
         // Assigns createdAt and updatedAt fields with a Date type

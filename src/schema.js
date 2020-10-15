@@ -38,7 +38,7 @@ module.exports = gql`
         users: [User!]!
         user(username: String!): User
         me: User!
-        verifyLink(uuid: String!): Boolean!
+        verifyLink(uuid: String!, signUp: Boolean!): Boolean!
     }
     type Mutation {
         createSession(
@@ -64,9 +64,9 @@ module.exports = gql`
         signUp(
             link_uuid: String!
             username: String!
-            email: String!
             password: String!
-        ): String!
+        ): Boolean!
+        resetPassword(link_uuid: String!, password: String!): Boolean!
         signIn(username: String, email: String, password: String!): String!
         createLink(email: String!): UniqueLink!
         clearUsers(secretCode: String!): Boolean!

@@ -201,36 +201,70 @@ module.exports = {
         }
     },
 
-    signUp: async (
-        parent,
-        { link_uuid, username, email, password },
-        { models },
-    ) => {
+    signUp: async (parent, { link_uuid, username, password }, { models }) => {
         console.log('signup')
-        console.log(link_uuid, username, email, password)
+        console.log(link_uuid, username, password)
         //check signUp link id
-        const linkRecord = await models.UniqueLink.findOne({ uuid: link_uuid })
+        const linkRecord = await models.UniqueLink.findOne({
+            uuid: link_uuid,
+            signUp: true,
+        })
         if (!linkRecord) {
             throw new ForbiddenError('This link is broken')
         }
-        if (!(email === linkRecord.email)) {
-            throw new ForbiddenError('Incorrect email provided')
-        }
+        const { email } = linkRecord
 
-        // normalise email address by trimming whitespaces and convert all to lower case
-        email = email.trim().toLowerCase()
         // hash the password
         const hashed = await bcrypt.hash(password, 10)
         // Store user in the DB
         try {
-            const user = await models.User.create({
+            await models.User.create({
                 username,
                 email,
                 password: hashed,
             })
-            await models.UniqueLink.findOneAndDelete({ uuid: link_uuid })
-            // create and return JWT
-            return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+            await models.UniqueLink.findOneAndDelete({
+                uuid: link_uuid,
+                signUp: true,
+            })
+            return true
+        } catch (err) {
+            console.log(err)
+            throw new Error('Error creating account')
+        }
+    },
+
+    resetPassword: async (parent, { link_uuid, password }, { models }) => {
+        console.log('resetPassword')
+        console.log(link_uuid, password)
+        //check signUp link id
+        const linkRecord = await models.UniqueLink.findOne({
+            uuid: link_uuid,
+            signUp: false,
+        })
+        if (!linkRecord) {
+            throw new ForbiddenError('This link is broken')
+        }
+        const { email } = linkRecord
+
+        const hashed = await bcrypt.hash(password, 10)
+        // Store user in the DB
+        try {
+            await models.User.findOneAndUpdate(
+                {
+                    email: email,
+                },
+                {
+                    $set: {
+                        password: hashed,
+                    },
+                },
+            )
+            await models.UniqueLink.findOneAndDelete({
+                uuid: link_uuid,
+                signUp: false,
+            })
+            return true
         } catch (err) {
             console.log(err)
             throw new Error('Error creating account')

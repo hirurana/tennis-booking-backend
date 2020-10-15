@@ -15,9 +15,9 @@ module.exports = {
         // find a user given the current user context
         return await models.User.findById(user.id)
     },
-    verifyLink: async (parent, { uuid }, { models }) => {
+    verifyLink: async (parent, { uuid, signUp }, { models }) => {
         // check if record exists
-        const link = await models.UniqueLink.findOne({ uuid })
+        const link = await models.UniqueLink.findOne({ uuid, signUp })
         return !!link
     },
     // need to add queries for members and coordinators
