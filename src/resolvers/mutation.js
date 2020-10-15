@@ -252,7 +252,7 @@ module.exports = {
         try {
             await models.User.findOneAndUpdate(
                 {
-                    email: email,
+                    email,
                 },
                 {
                     $set: {
@@ -295,14 +295,18 @@ module.exports = {
         return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
     },
 
-    createLink: async (parent, args, { models, user }) => {
+    createLink: async (parent, { email }, { models, user }) => {
         // check if email supplied exists (forgot pass)
-        const userExists = await models.User.findOne({ email: args.email })
+        console.log('createLink to email ' + email)
+        const userExists = await models.User.findOne({ email })
+        const linkExists = await models.UniqueLink.findOne({
+            email,
+        })
 
         if (!user) {
-            //if user not logged in then probably a forgot pass request.
-            //if user does not exist then bad request
-            if (!userExists) {
+            //if user not logged in then either forgot pass OR forgot signup
+            //if user does not exist AND link does not exist then bad request
+            if (!userExists && !linkExists) {
                 throw new AuthenticationError('Email not found')
             }
         } else {
@@ -316,8 +320,8 @@ module.exports = {
         }
 
         //if link exists remove it to create new one
-        const linkExists = await models.UniqueLink.findOneAndDelete({
-            email: args.email,
+        const removed = await models.UniqueLink.findOneAndDelete({
+            email,
         })
         //if user is admin or if unsigned user requests to create link for an account that exists
         //create a link for them
@@ -330,7 +334,7 @@ module.exports = {
         const prompt = userExists ? 'Reset Your Password' : 'Create an Account'
 
         const msg = {
-            to: args.email, // Change to your recipient
+            to: email, // Change to your recipient
             from: 'zcabhra@ucl.ac.uk', // Change to your verified sender
             subject: `UCL Tennis Society - ${prompt}`,
             html: `<strong>Please visit the following link to ${prompt.toLowerCase()} <a href="${link}">${link}</a></strong>`,
@@ -344,13 +348,13 @@ module.exports = {
                 console.error(error)
             })
 
-        return await models.UniqueLink.create({
+        console.log('creating new link')
+        const newLink = await models.UniqueLink.create({
             uuid: link_ext,
-            email: args.email,
-            createdBy: user
-                ? mongoose.Types.ObjectId(user.id)
-                : mongoose.Types.ObjectId(userExists.id),
+            email,
             signUp: !userExists,
         })
+
+        return true
     },
 }
