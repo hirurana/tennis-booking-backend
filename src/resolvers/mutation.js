@@ -202,8 +202,6 @@ module.exports = {
     },
 
     signUp: async (parent, { link_uuid, username, password }, { models }) => {
-        console.log('signup')
-        console.log(link_uuid, username, password)
         //check signUp link id
         const linkRecord = await models.UniqueLink.findOne({
             uuid: link_uuid,
@@ -413,9 +411,9 @@ module.exports = {
                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                               <tr>
                                 <td class="bodycopy">
-                                  Dear ${args.email.substr(
+                                  Dear ${email.substr(
                                       0,
-                                      args.email.indexOf('@'),
+                                      email.indexOf('@'),
                                   )}, <br><br> Click below to ${prompt.toLowerCase()}:
                                 </td>
                               </tr>
