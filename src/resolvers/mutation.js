@@ -474,7 +474,7 @@ module.exports = {
             .then(() => {
                 console.log('Email sent')
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error(error)
             })
 
@@ -483,6 +483,40 @@ module.exports = {
             uuid: link_ext,
             email,
             signUp: !userExists,
+        })
+
+        return true
+    },
+
+    createAdminAccount: async (parent, { secretKey }, { models }) => {
+        console.log('createAdminAccount')
+
+        if (!process.env.createAdminSecretKey || !process.env.adminPassword) {
+            throw new AuthenticationError(
+                'ERROR: admin secret key/password not set in env file!',
+            )
+        }
+
+        if (secretKey !== process.env.createAdminSecretKey) {
+            throw new AuthenticationError('Incorrect secretKey')
+        }
+
+        const existingAdmin = await models.User.findOne({
+            email: 'admin@ucltennis.com',
+            admin: true,
+        })
+
+        if (existingAdmin) {
+            throw new ForbiddenError('Admin account already exists!')
+        }
+
+        // create an admin account
+        const hashed = await bcrypt.hash(process.env.adminPassword, 10)
+        await models.User.create({
+            username: 'Admin',
+            email: 'admin@ucltennis.com',
+            password: hashed,
+            admin: true,
         })
 
         return true

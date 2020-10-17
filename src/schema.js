@@ -68,5 +68,6 @@ module.exports = gql`
         resetPassword(link_uuid: String!, password: String!): Boolean!
         signIn(username: String, email: String, password: String!): String!
         createLink(email: String!): Boolean!
+        createAdminAccount(secretKey: String!): Boolean!
     }
 `
