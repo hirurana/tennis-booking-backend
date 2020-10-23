@@ -9,20 +9,17 @@ const mongoose = require('mongoose')
 require('dotenv').config()
 
 const { sessions: getUserSessions } = require('../resolvers/user')
+const { isAdmin, isLoggedIn } = require('./auth')
 //SendGrid emailer setup API_KEY
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
-module.exports = {
+const mutations = {
     createSession: async (
         parent,
         { startTime, address, duration, level, courtIndex, maxSlots },
-        { models, user: { id: userId } },
+        { models, user },
     ) => {
-        const user = await models.User.findById(userId)
-        // if there is no user in the context throw an authentication error
-        if (!(user && user.admin)) {
-            throw new ForbiddenError('You must be an admin to make a Session')
-        }
+        await isAdmin(models, user.id);
 
         return await models.Session.create({
             startTime,
@@ -39,21 +36,10 @@ module.exports = {
     updateSession: async (
         parent,
         { id, ...args },
-        { models, user: { id: userId } },
+        { models, user },
     ) => {
-        const user = await models.User.findById(userId)
-        // if there is no user in the context throw an authentication error
-        if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to make a Session',
-            )
-        }
-        //if user is not an admin, throw ForbiddenError.
-        if (!user.admin) {
-            throw new ForbiddenError(
-                'You do not have permission to update this session',
-            )
-        }
+        await isAdmin(models, user.id);
+
         //find the session
         const session = await models.Session.findById(id)
         if (!session) {
@@ -83,21 +69,9 @@ module.exports = {
         )
     },
 
-    deleteSession: async (parent, { id }, { models, user: { id: userId } }) => {
-        const user = await models.User.findById(userId)
-        // if there is no user in the context throw an authentication error
-        if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to delete a session',
-            )
-        }
+    deleteSession: async (parent, { id }, { models, user }) => {
+        await isAdmin(models, user.id);
 
-        // if user is not an admin throw a ForbiddenError error
-        if (!user.admin) {
-            throw new ForbiddenError(
-                'You do not have permission to delete this session',
-            )
-        }
         //find the session
         const session = await models.Session.findById(id)
         if (!session) {
@@ -115,13 +89,9 @@ module.exports = {
     },
 
     createBooking: async (parent, { id }, { models, user: { id: userId } }) => {
+        await isLoggedIn(models, userId);
+
         const user = await models.User.findById(userId)
-        // if there is no user in the context throw an authentication error
-        if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to make a booking',
-            )
-        }
         // TODO make 3 a configurable value
         const userSessions = await getUserSessions(user, {}, { models })
         if (userSessions.length === 3) {
@@ -168,14 +138,9 @@ module.exports = {
     },
 
     deleteBooking: async (parent, { id }, { models, user: { id: userId } }) => {
+        await isLoggedIn(models, userId);
         const user = await models.User.findById(userId)
-        // if there is no user in the context throw an authentication error
-        if (!user) {
-            throw new AuthenticationError(
-                'You must be signed in to make a booking',
-            )
-        }
-        //ForbiddenError for deleting bookings that arent yours??
+        
         // find session
         const session = await models.Session.findById(id)
         // if already booked then remove
@@ -197,6 +162,7 @@ module.exports = {
             )
         } else {
             // if not booked then return session
+            // TODO: if not booked should an error be thrown?
             return session
         }
     },
@@ -233,8 +199,6 @@ module.exports = {
     },
 
     resetPassword: async (parent, { link_uuid, password }, { models }) => {
-        console.log('resetPassword')
-        console.log(link_uuid, password)
         //check signUp link id
         const linkRecord = await models.UniqueLink.findOne({
             uuid: link_uuid,
@@ -295,7 +259,6 @@ module.exports = {
 
     createLink: async (parent, { email }, { models, user }) => {
         // check if email supplied exists (forgot pass)
-        console.log('createLink to email ' + email)
         const userExists = await models.User.findOne({ email })
         const linkExists = await models.UniqueLink.findOne({
             email,
@@ -489,7 +452,6 @@ module.exports = {
     },
 
     createAdminAccount: async (parent, { secretKey }, { models }) => {
-        console.log('createAdminAccount')
 
         if (!process.env.createAdminSecretKey || !process.env.adminPassword) {
             throw new AuthenticationError(
@@ -522,3 +484,11 @@ module.exports = {
         return true
     },
 }
+
+const loggedMutations = {}
+Object.keys(mutations).forEach(mutationName => {
+    loggedMutations[mutationName] = (parent, args, {models, user}) => {
+        console.log(`mutation ${mutationName} called with args ${JSON.stringify(args)} and user ${user.id}`);
+        return mutations[mutationName](parent, args, {models, user});
+    }
+});
