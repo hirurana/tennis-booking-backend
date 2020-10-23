@@ -233,15 +233,13 @@ const mutations = {
         }
     },
 
-    signIn: async (parent, { username, email, password }, { models }) => {
+    signIn: async (parent, { email, password }, { models }) => {
         if (email) {
             //normalise email
             email = email.trim().toLowerCase()
         }
 
-        const user = await models.User.findOne({
-            $or: [{ email }, { username }],
-        })
+        const user = await models.User.findOne({email})
 
         //if no user found
         if (!user) {
