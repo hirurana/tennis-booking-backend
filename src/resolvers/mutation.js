@@ -294,7 +294,7 @@ const mutations = {
         //TODO generate email
 
         const link_ext = uuidv4()
-        const link = `http://localhost:1234/${
+        const link = `${process.env.FRONTEND_ADDRESS}/${
             userExists ? 'reset' : 'signup'
         }/${link_ext}`
         const prompt = userExists ? 'Reset Your Password' : 'Create an Account'
