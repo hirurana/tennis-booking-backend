@@ -88,12 +88,12 @@ const mutations = {
         }
     },
 
-    createBooking: async (parent, { id }, { models, user: { id: userId } }) => {
-        await isLoggedIn(models, userId);
+    createBooking: async (parent, { id }, { models, user }) => {
+        await isLoggedIn(models, user);
 
-        const user = await models.User.findById(userId)
+        const dbUser = await models.User.findById(user.id)
         // TODO make 3 a configurable value
-        const userSessions = await getUserSessions(user, {}, { models })
+        const userSessions = await getUserSessions(dbUser, {}, { models })
         if (userSessions.length === 3) {
             throw new ForbiddenError('You have used all of your bookings')
         }
@@ -116,7 +116,7 @@ const mutations = {
             throw new ForbiddenError('This session is fully booked')
         }
         // if already booked return session
-        const hasBooked = session.participants.indexOf(user.id)
+        const hasBooked = session.participants.indexOf(dbUser.id)
         if (hasBooked != -1) {
             return session
         } else {
@@ -124,7 +124,7 @@ const mutations = {
                 id,
                 {
                     $push: {
-                        participants: mongoose.Types.ObjectId(user.id),
+                        participants: mongoose.Types.ObjectId(dbUser.id),
                     },
                     $inc: {
                         slotsBooked: 1,
@@ -137,20 +137,20 @@ const mutations = {
         }
     },
 
-    deleteBooking: async (parent, { id }, { models, user: { id: userId } }) => {
-        await isLoggedIn(models, userId);
-        const user = await models.User.findById(userId)
+    deleteBooking: async (parent, { id }, { models, user }) => {
+        await isLoggedIn(models, user);
+        const dbUser = await models.User.findById(user.id)
         
         // find session
         const session = await models.Session.findById(id)
         // if already booked then remove
-        const hasBooked = session.participants.indexOf(user.id)
+        const hasBooked = session.participants.indexOf(dbUser.id)
         if (hasBooked != -1) {
             return await models.Session.findByIdAndUpdate(
                 id,
                 {
                     $pull: {
-                        participants: mongoose.Types.ObjectId(user.id),
+                        participants: mongoose.Types.ObjectId(dbUser.id),
                     },
                     $inc: {
                         slotsBooked: -1,
@@ -488,7 +488,15 @@ const mutations = {
 const loggedMutations = {}
 Object.keys(mutations).forEach(mutationName => {
     loggedMutations[mutationName] = (parent, args, {models, user}) => {
-        console.log(`mutation ${mutationName} called with args ${JSON.stringify(args)} and user ${user.id}`);
+        const blurredArgs = {...args}
+        if ("password" in blurredArgs) {
+            blurredArgs.password = "********"
+        }
+        console.log(`mutation ${mutationName} called with args ${JSON.stringify(blurredArgs)} and user ${JSON.stringify(user)}`);
         return mutations[mutationName](parent, args, {models, user});
     }
 });
+
+module.exports = {
+    ...loggedMutations
+}

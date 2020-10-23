@@ -11,7 +11,7 @@ const queries = {
         return await models.User.findOne({ username })
     },
     users: async (parent, args, { models, user }) => {
-        await isAdmin(models, user.id);
+        await isAdmin(models, user);
         return await models.User.find({})
     },
     me: async (parent, args, { models, user }) => {
@@ -22,8 +22,8 @@ const queries = {
 const authenticatedQueries = {};
 Object.keys(queries).forEach(queryName => {
     authenticatedQueries[queryName] = async (parent, args, {models, user}) => {
-        console.log(`query ${queryName} called with args ${JSON.stringify(args)} and user ${user.id}`);
-        await isLoggedIn(models, user.id);
+        console.log(`query ${queryName} called with args ${JSON.stringify(args)} and user ${JSON.stringify(user)}`);
+        await isLoggedIn(models, user);
         return queries[queryName](parent, args, {models, user});
     }
 })
