@@ -268,6 +268,11 @@ const mutations = {
             if (!userExists && !linkExists) {
                 throw new AuthenticationError('Email not found')
             }
+            if(userExists) {
+                console.log('creating forgot password link');
+            } else if (linkExists) {
+                console.log('re-sending first time signup link');
+            }
         } else {
             //user is signed in, check if admin
             user_profile = await models.User.findById(user.id)
@@ -275,6 +280,8 @@ const mutations = {
                 throw new ForbiddenError(
                     'You must be an admin to generate links',
                 )
+            } else {
+                console.log('adding new user to database');
             }
         }
 

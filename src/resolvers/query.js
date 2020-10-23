@@ -31,8 +31,10 @@ Object.keys(queries).forEach(queryName => {
 module.exports = {
     ...authenticatedQueries,
     verifyLink: async (parent, { uuid, signUp }, { models }) => {
+        console.log(`verifyLink called with args ${uuid} ${signUp}`);
         // check if record exists
         const link = await models.UniqueLink.findOne({ uuid, signUp })
+        console.log(`link found: ${JSON.stringify(link)}`);
         return !!link
     },
     // TODO need to add queries for members and coordinators
