@@ -446,7 +446,7 @@ const mutations = {
                 console.error(error)
             })
 
-        console.log('creating new link')
+        console.log(`creating new link: ${link}`)
         const newLink = await models.UniqueLink.create({
             uuid: link_ext,
             email,
