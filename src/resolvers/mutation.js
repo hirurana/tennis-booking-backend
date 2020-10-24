@@ -19,7 +19,7 @@ const mutations = {
         { startTime, address, duration, level, courtIndex, maxSlots },
         { models, user },
     ) => {
-        await isAdmin(models, user.id);
+        await isAdmin(models, user);
 
         return await models.Session.create({
             startTime,
@@ -38,7 +38,7 @@ const mutations = {
         { id, ...args },
         { models, user },
     ) => {
-        await isAdmin(models, user.id);
+        await isAdmin(models, user);
 
         //find the session
         const session = await models.Session.findById(id)
@@ -70,7 +70,7 @@ const mutations = {
     },
 
     deleteSession: async (parent, { id }, { models, user }) => {
-        await isAdmin(models, user.id);
+        await isAdmin(models, user);
 
         //find the session
         const session = await models.Session.findById(id)

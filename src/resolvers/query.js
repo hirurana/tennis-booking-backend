@@ -22,7 +22,9 @@ const queries = {
 const authenticatedQueries = {};
 Object.keys(queries).forEach(queryName => {
     authenticatedQueries[queryName] = async (parent, args, {models, user}) => {
-        console.log(`query ${queryName} called with args ${JSON.stringify(args)} and user ${JSON.stringify(user)}`);
+        if(queryName !== 'me' && queryName !== 'sessions') {
+            console.log(`query ${queryName} called with args ${JSON.stringify(args)} and user ${JSON.stringify(user)}`);
+        }
         await isLoggedIn(models, user);
         return queries[queryName](parent, args, {models, user});
     }
