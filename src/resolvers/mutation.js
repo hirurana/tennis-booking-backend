@@ -16,13 +16,27 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 const mutations = {
     createSession: async (
         parent,
-        { startTime, address, duration, level, courtIndex, maxSlots },
+        {
+            startTime: stringStartTime,
+            address,
+            duration,
+            level,
+            courtIndex,
+            maxSlots,
+        },
         { models, user },
     ) => {
         await isAdmin(models, user)
 
+        const startTime = new Date(stringStartTime)
+
+        const endTime = new Date(startTime).setMinutes(
+            startTime.getMinutes() + duration,
+        )
+
         return await models.Session.create({
             startTime,
+            endTime,
             address,
             duration,
             level,
@@ -103,8 +117,8 @@ const mutations = {
         // TODO uncomment this some day
         if (
             new Date() >
-            new Date(session.startTime).setMinutes(
-                new Date(session.startTime).getMinutes() + session.duration,
+            session.startTime.setMinutes(
+                session.startTime.getMinutes() + session.duration,
             )
         ) {
             throw new ForbiddenError('This session has ended!')

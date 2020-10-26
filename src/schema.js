@@ -5,6 +5,7 @@ module.exports = gql`
     type Session {
         id: ID!
         startTime: DateTime!
+        endTime: DateTime!
         address: String!
         duration: Int!
         level: String!
@@ -41,7 +42,7 @@ module.exports = gql`
     }
     type Mutation {
         createSession(
-            startTime: String!
+            startTime: DateTime!
             address: String!
             duration: Int!
             level: String!
@@ -50,7 +51,7 @@ module.exports = gql`
         ): Session!
         updateSession(
             id: ID!
-            startTime: String
+            startTime: DateTime
             address: String
             duration: Int
             level: String
