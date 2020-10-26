@@ -27,11 +27,6 @@ const sessionSchema = new mongoose.Schema(
             type: Number,
             required: true,
         },
-        slotsBooked: {
-            type: Number,
-            default: 0,
-            required: true,
-        },
         participants: [
             {
                 type: mongoose.Schema.Types.ObjectId,

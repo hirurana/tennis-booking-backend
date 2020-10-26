@@ -10,7 +10,6 @@ module.exports = gql`
         level: String!
         courtIndex: Int!
         maxSlots: Int!
-        slotsBooked: Int!
         participants: [User!]
         author: User!
         lastUpdatedBy: User!

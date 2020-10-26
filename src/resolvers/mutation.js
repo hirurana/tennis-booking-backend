@@ -43,7 +43,7 @@ const mutations = {
         }
         if (args.maxSlots) {
             // // if new max slots is less than already booked throw an error
-            if (session.slotsBooked > args.maxSlots) {
+            if (session.participants.length > args.maxSlots) {
                 throw new ForbiddenError(
                     'Cannot change maximum capacity lower than number of users already booked',
                 )
@@ -111,7 +111,7 @@ const mutations = {
         }
 
         // if session full throw an error
-        if (session.slotsBooked === session.maxSlots) {
+        if (session.participants.length === session.maxSlots) {
             throw new ForbiddenError('This session is fully booked')
         }
         // if already booked return session
@@ -124,9 +124,6 @@ const mutations = {
                 {
                     $push: {
                         participants: mongoose.Types.ObjectId(dbUser.id),
-                    },
-                    $inc: {
-                        slotsBooked: 1,
                     },
                 },
                 {
@@ -154,9 +151,6 @@ const mutations = {
                 {
                     $pull: {
                         participants: mongoose.Types.ObjectId(dbUser.id),
-                    },
-                    $inc: {
-                        slotsBooked: -1,
                     },
                 },
                 {
