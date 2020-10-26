@@ -19,7 +19,7 @@ const mutations = {
         { startTime, address, duration, level, courtIndex, maxSlots },
         { models, user },
     ) => {
-        await isAdmin(models, user);
+        await isAdmin(models, user)
 
         return await models.Session.create({
             startTime,
@@ -33,12 +33,8 @@ const mutations = {
         })
     },
 
-    updateSession: async (
-        parent,
-        { id, ...args },
-        { models, user },
-    ) => {
-        await isAdmin(models, user);
+    updateSession: async (parent, { id, ...args }, { models, user }) => {
+        await isAdmin(models, user)
 
         //find the session
         const session = await models.Session.findById(id)
@@ -70,7 +66,7 @@ const mutations = {
     },
 
     deleteSession: async (parent, { id }, { models, user }) => {
-        await isAdmin(models, user);
+        await isAdmin(models, user)
 
         //find the session
         const session = await models.Session.findById(id)
@@ -89,7 +85,7 @@ const mutations = {
     },
 
     createBooking: async (parent, { id }, { models, user }) => {
-        await isLoggedIn(models, user);
+        await isLoggedIn(models, user)
 
         const dbUser = await models.User.findById(user.id)
         // TODO make 3 a configurable value
@@ -138,9 +134,9 @@ const mutations = {
     },
 
     deleteBooking: async (parent, { id }, { models, user }) => {
-        await isLoggedIn(models, user);
+        await isLoggedIn(models, user)
         const dbUser = await models.User.findById(user.id)
-        
+
         // find session
         const session = await models.Session.findById(id)
         // if already booked then remove
@@ -239,7 +235,7 @@ const mutations = {
             email = email.trim().toLowerCase()
         }
 
-        const user = await models.User.findOne({email})
+        const user = await models.User.findOne({ email })
 
         //if no user found
         if (!user) {
@@ -252,7 +248,10 @@ const mutations = {
             throw new AuthenticationError('Error signing in')
         }
         //create and return the json web token
-        return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+        // https://hasura.io/blog/best-practices-of-using-jwt-with-graphql/#:~:text=This%20is%20why%20JWTs%20have,JWTs%20don't%20get%20leaked.
+        return jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+            expiresIn: '15m',
+        })
     },
 
     createLink: async (parent, { email }, { models, user }) => {
@@ -268,10 +267,10 @@ const mutations = {
             if (!userExists && !linkExists) {
                 throw new AuthenticationError('Email not found')
             }
-            if(userExists) {
-                console.log('creating forgot password link');
+            if (userExists) {
+                console.log('creating forgot password link')
             } else if (linkExists) {
-                console.log('re-sending first time signup link');
+                console.log('re-sending first time signup link')
             }
         } else {
             //user is signed in, check if admin
@@ -281,7 +280,7 @@ const mutations = {
                     'You must be an admin to generate links',
                 )
             } else {
-                console.log('adding new user to database');
+                console.log('adding new user to database')
             }
         }
 
@@ -457,7 +456,6 @@ const mutations = {
     },
 
     createAdminAccount: async (parent, { secretKey }, { models }) => {
-
         if (!process.env.createAdminSecretKey || !process.env.adminPassword) {
             throw new AuthenticationError(
                 'ERROR: admin secret key/password not set in env file!',
@@ -491,17 +489,21 @@ const mutations = {
 }
 
 const loggedMutations = {}
-Object.keys(mutations).forEach(mutationName => {
-    loggedMutations[mutationName] = (parent, args, {models, user}) => {
-        const blurredArgs = {...args}
-        if ("password" in blurredArgs) {
-            blurredArgs.password = "********"
+Object.keys(mutations).forEach((mutationName) => {
+    loggedMutations[mutationName] = (parent, args, { models, user }) => {
+        const blurredArgs = { ...args }
+        if ('password' in blurredArgs) {
+            blurredArgs.password = '********'
         }
-        console.log(`mutation ${mutationName} called with args ${JSON.stringify(blurredArgs)} and user ${JSON.stringify(user)}`);
-        return mutations[mutationName](parent, args, {models, user});
+        console.log(
+            `mutation ${mutationName} called with args ${JSON.stringify(
+                blurredArgs,
+            )} and user ${JSON.stringify(user)}`,
+        )
+        return mutations[mutationName](parent, args, { models, user })
     }
-});
+})
 
 module.exports = {
-    ...loggedMutations
+    ...loggedMutations,
 }
