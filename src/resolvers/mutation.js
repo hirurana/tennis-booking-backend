@@ -93,7 +93,7 @@ const mutations = {
         const dbUser = await models.User.findById(userID)
         // TODO make 3 a configurable value
         const userSessions = await getUserSessions(dbUser, {}, { models })
-        if (userSessions.length === 3) {
+        if (userSessions.length === dbUser.maxSessions) {
             throw new ForbiddenError('You have used all of your bookings')
         }
 
@@ -183,6 +183,8 @@ const mutations = {
                 username,
                 email,
                 password: hashed,
+                admin: false,
+                maxSessions: process.env.MAX_SESSIONS_DEFAULT,
             })
             await models.UniqueLink.findOneAndDelete({
                 uuid: link_uuid,
@@ -483,6 +485,7 @@ const mutations = {
             email: 'admin@ucltennis.com',
             password: hashed,
             admin: true,
+            maxSessions: 100,
         })
 
         return true

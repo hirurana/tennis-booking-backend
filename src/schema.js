@@ -22,6 +22,7 @@ module.exports = gql`
         email: String!
         admin: Boolean!
         sessions: [Session!]!
+        maxSessions: Int!
     }
     type UniqueLink {
         id: ID!

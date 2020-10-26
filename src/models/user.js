@@ -21,6 +21,10 @@ const UserSchema = new mongoose.Schema(
             default: false,
             required: true,
         },
+        maxSessions: {
+            type: Number,
+            required: true,
+        },
     },
     {
         timestamps: true,
