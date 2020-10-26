@@ -58,8 +58,8 @@ module.exports = gql`
             maxSlots: Int
         ): Session!
         deleteSession(id: ID!): Boolean!
-        createBooking(id: ID!): Session!
-        deleteBooking(id: ID!): Session!
+        createBooking(userID: ID!, sessionID: ID!): Session!
+        deleteBooking(userID: ID!, sessionID: ID!): Session!
         signUp(
             link_uuid: String!
             username: String!

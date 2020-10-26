@@ -84,10 +84,13 @@ const mutations = {
         }
     },
 
-    createBooking: async (parent, { id }, { models, user }) => {
+    createBooking: async (parent, { userID, sessionID }, { models, user }) => {
         await isLoggedIn(models, user)
+        if (user.id !== userID) {
+            await isAdmin(models, user)
+        }
 
-        const dbUser = await models.User.findById(user.id)
+        const dbUser = await models.User.findById(userID)
         // TODO make 3 a configurable value
         const userSessions = await getUserSessions(dbUser, {}, { models })
         if (userSessions.length === 3) {
@@ -95,7 +98,7 @@ const mutations = {
         }
 
         // find session
-        const session = await models.Session.findById(id)
+        const session = await models.Session.findById(sessionID)
 
         // TODO uncomment this some day
         if (
@@ -117,7 +120,7 @@ const mutations = {
             return session
         } else {
             return await models.Session.findByIdAndUpdate(
-                id,
+                sessionID,
                 {
                     $push: {
                         participants: mongoose.Types.ObjectId(dbUser.id),
@@ -133,17 +136,21 @@ const mutations = {
         }
     },
 
-    deleteBooking: async (parent, { id }, { models, user }) => {
+    deleteBooking: async (parent, { userID, sessionID }, { models, user }) => {
         await isLoggedIn(models, user)
-        const dbUser = await models.User.findById(user.id)
+        if (user.id !== userID) {
+            await isAdmin(models, user)
+        }
+
+        const dbUser = await models.User.findById(userID)
 
         // find session
-        const session = await models.Session.findById(id)
+        const session = await models.Session.findById(sessionID)
         // if already booked then remove
         const hasBooked = session.participants.indexOf(dbUser.id)
         if (hasBooked != -1) {
             return await models.Session.findByIdAndUpdate(
-                id,
+                sessionID,
                 {
                     $pull: {
                         participants: mongoose.Types.ObjectId(dbUser.id),
