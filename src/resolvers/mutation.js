@@ -4,7 +4,11 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const { v4: uuidv4 } = require('uuid')
 const sgMail = require('@sendgrid/mail')
-const { AuthenticationError, ForbiddenError } = require('apollo-server-express')
+const {
+    AuthenticationError,
+    ForbiddenError,
+    ValidationError,
+} = require('apollo-server-express')
 const mongoose = require('mongoose')
 require('dotenv').config()
 
@@ -12,6 +16,51 @@ const { sessions: getUserSessions } = require('../resolvers/user')
 const { isAdmin, isLoggedIn } = require('./auth')
 //SendGrid emailer setup API_KEY
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+
+const sessionIsValid = async (session, models) => {
+    // check times match up
+    const calculatedEndTime = new Date(
+        new Date(session.startTime).setMinutes(
+            session.startTime.getMinutes() + session.duration,
+        ),
+    )
+    if (calculatedEndTime.getTime() !== session.endTime.getTime()) {
+        throw new ValidationError('End times dont match up')
+    }
+
+    // check maxSlots
+    if (session.maxSlots < session.participants.length) {
+        throw new ValidationError('maxSlots must be >= participants.length')
+    }
+
+    // check another session doesn't exist on this court at this time
+    const overlappingSession = await models.Session.find({
+        address: session.address,
+        courtIndex: session.courtIndex,
+        $or: [
+            {
+                startTime: {
+                    $gt: session.startTime,
+                    $lt: session.endTime,
+                },
+            },
+            {
+                endTime: {
+                    $gt: session.startTime,
+                    $lt: session.endTime,
+                },
+            },
+        ],
+    })
+
+    if (overlappingSession.length > 0) {
+        throw new ValidationError(
+            'A session already exists at that court at that time',
+        )
+    }
+
+    return true
+}
 
 const mutations = {
     createSession: async (
@@ -29,22 +78,29 @@ const mutations = {
         await isAdmin(models, user)
 
         const startTime = new Date(stringStartTime)
+        // startTime.setMilliseconds(0)
 
-        const endTime = new Date(startTime).setMinutes(
-            startTime.getMinutes() + duration,
+        const endTime = new Date(
+            new Date(startTime).setMinutes(startTime.getMinutes() + duration),
         )
+        // endTime.setMilliseconds(0)
 
-        return await models.Session.create({
+        const session = {
+            address,
             startTime,
             endTime,
-            address,
             duration,
-            level,
             courtIndex,
+            level,
             maxSlots,
+            participants: [],
             author: mongoose.Types.ObjectId(user.id),
             lastUpdatedBy: mongoose.Types.ObjectId(user.id),
-        })
+        }
+
+        if (await sessionIsValid(session, models)) {
+            return await models.Session.create(session)
+        }
     },
 
     updateSession: async (parent, { id, ...args }, { models, user }) => {
