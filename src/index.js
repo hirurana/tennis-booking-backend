@@ -42,6 +42,7 @@ const server = new ApolloServer({
     resolvers,
     //validationRules: [depthLimit(5), createComplexityLimitRule(1000)],
     context: ({ req }) => {
+        // console.log(req)
         // get the user token from the headers
         const token = req.headers.authorization
         let user
@@ -50,6 +51,13 @@ const server = new ApolloServer({
             // have to wrap this in try-catch since getUser on an expired token throws an error
             user = getUser(token)
         } catch {}
+
+        console.log(
+            `req ${req.body.operationName} args ${JSON.stringify(
+                req.body.variables,
+            )} user ${JSON.stringify(user)}`,
+        )
+
         // Add the db models and the user to the context
         return { models, user }
     },

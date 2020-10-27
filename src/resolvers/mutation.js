@@ -576,22 +576,6 @@ const mutations = {
     },
 }
 
-const loggedMutations = {}
-Object.keys(mutations).forEach((mutationName) => {
-    loggedMutations[mutationName] = (parent, args, { models, user }) => {
-        const blurredArgs = { ...args }
-        if ('password' in blurredArgs) {
-            blurredArgs.password = '********'
-        }
-        console.log(
-            `mutation ${mutationName} called with args ${JSON.stringify(
-                blurredArgs,
-            )} and user ${JSON.stringify(user)}`,
-        )
-        return mutations[mutationName](parent, args, { models, user })
-    }
-})
-
 module.exports = {
-    ...loggedMutations,
+    ...mutations,
 }
