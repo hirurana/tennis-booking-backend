@@ -3,7 +3,7 @@ const helmet = require('helmet')
 const cors = require('cors')
 const depthLimit = require('graphql-depth-limit')
 const { createComplexityLimitRule } = require('graphql-validation-complexity')
-const { ApolloServer } = require('apollo-server-express')
+const { ApolloServer, AuthenticationError } = require('apollo-server-express')
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
 
@@ -44,8 +44,12 @@ const server = new ApolloServer({
     context: ({ req }) => {
         // get the user token from the headers
         const token = req.headers.authorization
-        // try to retrieve a user with the token
-        const user = getUser(token)
+        let user
+        try {
+            // try to retrieve a user with the token
+            // have to wrap this in try-catch since getUser on an expired token throws an error
+            user = getUser(token)
+        } catch {}
         // Add the db models and the user to the context
         return { models, user }
     },
