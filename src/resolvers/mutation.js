@@ -111,28 +111,42 @@ const mutations = {
         if (!session) {
             throw new ForbiddenError(`Session with id ${id} does not exist`)
         }
-        if (args.maxSlots) {
-            // // if new max slots is less than already booked throw an error
-            if (session.participants.length > args.maxSlots) {
-                throw new ForbiddenError(
-                    'Cannot change maximum capacity lower than number of users already booked',
-                )
-            }
+
+        // Getting time info from args or stored session (since args are passed optionally)
+        const timeInfo = {
+            startTime: args.startTime ? args.startTime : session.startTime,
+            duration: args.duration ? args.duration : session.duration,
         }
-        return await models.Session.findOneAndUpdate(
-            {
-                _id: id,
-            },
-            {
-                $set: {
-                    ...args,
-                    lastUpdatedBy: mongoose.Types.ObjectId(user.id),
-                },
-            },
-            {
-                new: true,
-            },
+
+        args.startTime = new Date(timeInfo.startTime)
+        args.endTime = new Date(
+            new Date(timeInfo.startTime).setMinutes(
+                timeInfo.startTime.getMinutes() + timeInfo.duration,
+            ),
         )
+
+        const updatedSession = {
+            ...session,
+            ...args,
+            lastUpdatedBy: mongoose.Types.ObjectId(user.id),
+        }
+
+        if (await sessionIsValid(updatedSession, models)) {
+            return await models.Session.findOneAndUpdate(
+                {
+                    _id: id,
+                },
+                {
+                    $set: {
+                        ...args,
+                        lastUpdatedBy: mongoose.Types.ObjectId(user.id),
+                    },
+                },
+                {
+                    new: true,
+                },
+            )
+        }
     },
 
     deleteSession: async (parent, { id }, { models, user }) => {
