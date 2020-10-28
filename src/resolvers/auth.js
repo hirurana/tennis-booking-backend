@@ -7,7 +7,7 @@ const isLoggedIn = async (models, user) => {
     }
     const dbUser = await models.User.findById(user.id)
     if (!dbUser) {
-        console.log(`ia user not in db: ${JSON.stringify(user)}`)
+        console.log(`ili user not in db: ${JSON.stringify(user)}`)
         throw new AuthenticationError(`You must be signed in to do this`)
     }
 }
