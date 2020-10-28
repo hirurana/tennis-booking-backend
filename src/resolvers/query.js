@@ -10,8 +10,8 @@ const queries = {
     session: async (parent, args, { models }) => {
         return await models.Session.findById(args.id)
     },
-    user: async (parent, { username }, { models }) => {
-        return await models.User.findOne({ username })
+    user: async (parent, { fullName }, { models }) => {
+        return await models.User.findOne({ fullName })
     },
     users: async (parent, args, { models, user }) => {
         await isAdmin(models, user)
