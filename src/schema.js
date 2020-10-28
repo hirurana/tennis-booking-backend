@@ -19,7 +19,7 @@ module.exports = gql`
     }
     type User {
         id: ID!
-        username: String!
+        fullName: String!
         email: String!
         admin: Boolean!
         sessions: [Session!]!
@@ -32,13 +32,17 @@ module.exports = gql`
         signUp: Boolean!
         createdAt: DateTime!
     }
+    type LinkCheckResult {
+        success: Boolean!
+        email: String
+    }
     type Query {
         sessions: [Session!]!
         session(id: ID!): Session!
         users: [User!]!
-        user(username: String!): User
+        user(fullName: String!): User
         me: User!
-        verifyLink(uuid: String!, signUp: Boolean!): Boolean!
+        verifyLink(uuid: String!, signUp: Boolean!): LinkCheckResult!
     }
     type Mutation {
         createSession(
@@ -63,7 +67,7 @@ module.exports = gql`
         deleteBooking(userID: ID!, sessionID: ID!): Session!
         signUp(
             link_uuid: String!
-            username: String!
+            fullName: String!
             password: String!
         ): Boolean!
         resetPassword(link_uuid: String!, password: String!): Boolean!

@@ -39,7 +39,10 @@ module.exports = {
     verifyLink: async (parent, { uuid, signUp }, { models }) => {
         // check if record exists
         const link = await models.UniqueLink.findOne({ uuid, signUp })
-        return !!link
+        return {
+            success: !!link,
+            email: link ? link.email : undefined,
+        }
     },
     // TODO need to add queries for members and coordinators
 }

@@ -47,6 +47,9 @@ module.exports = {
         if ('password' in blurredVariables) {
             blurredVariables.password = '*******'
         }
+        if ('confirmPassword' in blurredVariables) {
+            blurredVariables.confirmPassword = '*******'
+        }
 
         if (log.length) {
             console.log('===========')

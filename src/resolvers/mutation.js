@@ -248,7 +248,7 @@ const mutations = {
         }
     },
 
-    signUp: async (parent, { link_uuid, username, password }, { models }) => {
+    signUp: async (parent, { link_uuid, fullName, password }, { models }) => {
         //check signUp link id
         const linkRecord = await models.UniqueLink.findOne({
             uuid: link_uuid,
@@ -264,7 +264,7 @@ const mutations = {
         // Store user in the DB
         try {
             await models.User.create({
-                username,
+                fullName,
                 email,
                 password: hashed,
                 admin: false,
@@ -565,7 +565,7 @@ const mutations = {
         // create an admin account
         const hashed = await bcrypt.hash(process.env.adminPassword, 10)
         await models.User.create({
-            username: 'Admin',
+            fullName: 'Admin',
             email: 'admin@ucltennis.com',
             password: hashed,
             admin: true,
